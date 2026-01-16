@@ -1,7 +1,7 @@
 {
-  "name": "chrome-extension-starter-kit",
-  "version": "0.1.0",
-  "description": "",
+  "name": "typer-ai-extension",
+  "version": "0.0.1",
+  "description": "テキスト入力を支援する AI アシスタントツール",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -19,6 +19,7 @@
     "@types/chrome": "^0.1.6",
     "copy-webpack-plugin": "^13.0.1",
     "cross-env": "^10.1.0",
+    "mini-css-extract-plugin": "^2.9.4",
     "ts-loader": "^9.5.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.2",

@@ -56,48 +56,68 @@
     <div class="tab-pane fade mt-3 mx-2 show active" id="settings" role="tabpanel" style="margin-bottom: 180px;"
       aria-labelledby="settings-tab">
       <h5 class="">設定</h5>
-      <p class="text-muted small">ここに拡張機能の設定項目を追加してください</p>
+      <p class="text-muted small">TyperAI の動作設定を行います</p>
 
-      <!-- =========================
-        設定項目のテンプレート
-        ※ 以下のコメントアウトされた例を参考に，実際の設定項目を追加してください
-      ========================== -->
       <ul class="list-group list-group-flush">
-        <!-- 
-        ========== 設定項目の例 ==========
-
-        ▼ セレクトボックス（ドロップダウン）の例:
+        <!-- APIキー設定 -->
         <li class="list-group-item">
           <div class="mb-3">
-            <label for="theme-select" class="form-label d-flex">テーマ：</label>
-            <select class="form-select" id="theme-select">
-              <option value="light">ライト</option>
-              <option value="dark">ダーク</option>
-              <option value="system">システム</option>
-            </select>
+            <label for="api-key" class="form-label d-flex">Gemini APIキー：</label>
+            <input type="password" class="form-control" id="api-key" placeholder="APIキーを入力してください">
+            <small class="text-muted">
+              <a href="https://aistudio.google.com/app/apikey" target="_blank">APIキーを取得する</a>
+            </small>
           </div>
         </li>
 
-        ▼ スライダー（範囲入力）の例:
+        <!-- トリガー文字設定 -->
         <li class="list-group-item">
           <div class="mb-3">
-            <label for="font-size" class="form-label d-flex">フォントサイズ：</label>
-            <input type="range" class="form-range" id="font-size" min="12" max="24" value="16">
-            <small class="text-muted">12〜24の範囲で調整可能</small>
+            <label for="trigger-char" class="form-label d-flex">トリガー文字：</label>
+            <input type="text" class="form-control" id="trigger-char" placeholder="!" maxlength="1">
+            <small class="text-muted">入力欄で入力するとミニUIが起動する文字</small>
           </div>
         </li>
 
-        ▼ チェックボックスの例:
+        <!-- トリガー文字の処理方法 -->
+        <li class="list-group-item">
+          <div class="mb-3">
+            <label class="form-label d-flex">トリガー文字の処理方法：</label>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="trigger-mode" id="trigger-mode-delete" value="delete"
+                checked>
+              <label class="form-check-label" for="trigger-mode-delete">削除する</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="trigger-mode" id="trigger-mode-keep" value="keep">
+              <label class="form-check-label" for="trigger-mode-keep">残す</label>
+            </div>
+            <small class="text-muted">トリガー文字を入力後の動作を選択</small>
+          </div>
+        </li>
+
+        <!-- ショートカット設定 -->
         <li class="list-group-item">
           <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" id="enable-notifications">
-            <label class="form-check-label" for="enable-notifications">
-              通知を受け取る
+            <input class="form-check-input" type="checkbox" id="shortcut-enabled" checked>
+            <label class="form-check-label" for="shortcut-enabled">
+              ショートカットを有効にする（Ctrl + Space）
             </label>
           </div>
         </li>
 
-        ▼ テキスト入力の例:
+        <!-- 挿入モード -->
+        <li class="list-group-item">
+          <div class="mb-3">
+            <label for="insert-mode" class="form-label d-flex">挿入モード：</label>
+            <select class="form-select" id="insert-mode">
+              <option value="insert" selected>カーソル位置に挿入</option>
+              <option value="replace">選択範囲を置換</option>
+              <option value="append">末尾に追加</option>
+            </select>
+            <small class="text-muted">生成されたテキストの挿入方法を選択</small>
+          </div>
+        </li>
         <li class="list-group-item">
           <div class="mb-3">
             <label for="api-key" class="form-label d-flex">APIキー：</label>
@@ -114,12 +134,12 @@
               <label class="form-check-label" for="mode-compact">コンパクト</label>
             </div>
             <div class="form-check">
-              <input class="form-check-input" type="radio" name="display-mode" id="mode-standard" value="standard" checked>
+              <input class="form-check-input" type="radio" name="display-mode" id="mode-standard" value="standard"
+                checked>
               <label class="form-check-label" for="mode-standard">標準</label>
             </div>
           </div>
         </li>
-        -->
       </ul>
     </div>
 

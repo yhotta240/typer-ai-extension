@@ -3,6 +3,8 @@ import { PopupPanel } from './popup/panel';
 import { dateTime } from './utils/date';
 import { clickURL } from './utils/dom';
 import { getSiteAccessText } from './utils/permissions';
+import { loadSettings, saveSettings } from './utils/storage';
+import { AppSettings } from './types/settings';
 import meta from '../public/manifest.meta.json';
 
 class PopupManager {
@@ -22,30 +24,61 @@ class PopupManager {
     this.addEventListeners();
   }
 
-  private loadInitialState(): void {
-    chrome.storage.local.get(['settings', 'enabled'], (data) => {
-      if (this.enabledElement) {
-        this.enabled = data.enabled || false;
-        this.enabledElement.checked = this.enabled;
-      }
-      this.showMessage(`${this.manifestData.short_name} が起動しました`);
+  private async loadInitialState(): Promise<void> {
+    // 拡張機能の有効/無効状態を読み込み
+    if (this.enabledElement) {
+      const settings = await loadSettings();
+      this.enabled = settings.enabled;
+      this.enabledElement.checked = this.enabled;
+    }
 
-      // 設定値の読み込み例
-      // const settings = data.settings || {};
-      // if (settings.theme) {
-      //   const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
-      //   if (themeSelect) themeSelect.value = settings.theme;
-      // }
-    });
+    // 設定値の読み込み
+    await this.loadSettings();
+
+    this.showMessage(`${this.manifestData.short_name} が起動しました`);
+  }
+
+  private async loadSettings(): Promise<void> {
+    const settings = await loadSettings();
+
+    // APIキー
+    const apiKeyInput = document.getElementById('api-key') as HTMLInputElement;
+    if (apiKeyInput) {
+      apiKeyInput.value = settings.apiKey || '';
+    }
+
+    // トリガー文字
+    const triggerCharInput = document.getElementById('trigger-char') as HTMLInputElement;
+    if (triggerCharInput) {
+      triggerCharInput.value = settings.trigger.character;
+    }
+
+    // トリガー文字の処理方法
+    const triggerModeRadio = document.querySelector(`input[name="trigger-mode"][value="${settings.trigger.mode}"]`) as HTMLInputElement;
+    if (triggerModeRadio) {
+      triggerModeRadio.checked = true;
+    }
+
+    // ショートカット
+    const shortcutEnabledCheckbox = document.getElementById('shortcut-enabled') as HTMLInputElement;
+    if (shortcutEnabledCheckbox) {
+      shortcutEnabledCheckbox.checked = settings.shortcut.enabled;
+    }
+
+    // 挿入モード
+    const insertModeSelect = document.getElementById('insert-mode') as HTMLSelectElement;
+    if (insertModeSelect) {
+      insertModeSelect.value = settings.insertMode;
+    }
   }
 
   private addEventListeners(): void {
+    // 拡張機能の有効/無効切り替え
     if (this.enabledElement) {
-      this.enabledElement.addEventListener('change', (event) => {
+      this.enabledElement.addEventListener('change', async (event) => {
         this.enabled = (event.target as HTMLInputElement).checked;
-        chrome.storage.local.set({ enabled: this.enabled }, () => {
-          this.showMessage(this.enabled ? `${this.manifestData.short_name} は有効になっています` : `${this.manifestData.short_name} は無効になっています`);
-        });
+        await saveSettings({ enabled: this.enabled });
+        this.showMessage(this.enabled ? `${this.manifestData.short_name} は有効になっています` : `${this.manifestData.short_name} は無効になっています`);
       });
     }
 
@@ -54,34 +87,69 @@ class PopupManager {
   }
 
   private setupSettingsListeners(): void {
-    // 設定項目のイベントリスナー例
-    //
-    // セレクトボックスの例:
-    // const themeSelect = document.getElementById('theme-select') as HTMLSelectElement;
-    // if (themeSelect) {
-    //   themeSelect.addEventListener('change', (event) => {
-    //     const value = (event.target as HTMLSelectElement).value;
-    //     this.saveSetting('theme', value, `テーマを「${value}」に変更しました`);
-    //   });
-    // }
-    //
-    // チェックボックスの例:
-    // const notificationToggle = document.getElementById('enable-notifications') as HTMLInputElement;
-    // if (notificationToggle) {
-    //   notificationToggle.addEventListener('change', (event) => {
-    //     const checked = (event.target as HTMLInputElement).checked;
-    //     this.saveSetting('notifications', checked, `通知を${checked ? '有効' : '無効'}にしました`);
-    //   });
-    // }
-    //
-    // スライダーの例:
-    // const fontSizeRange = document.getElementById('font-size') as HTMLInputElement;
-    // if (fontSizeRange) {
-    //   fontSizeRange.addEventListener('change', (event) => {
-    //     const value = (event.target as HTMLInputElement).value;
-    //     this.saveSetting('fontSize', value, `フォントサイズを${value}pxに変更しました`);
-    //   });
-    // }
+    // APIキー
+    const apiKeyInput = document.getElementById('api-key') as HTMLInputElement;
+    if (apiKeyInput) {
+      apiKeyInput.addEventListener('change', async (event) => {
+        const value = (event.target as HTMLInputElement).value;
+        await saveSettings({ apiKey: value });
+        this.showMessage('APIキーを保存しました');
+      });
+    }
+
+    // トリガー文字
+    const triggerCharInput = document.getElementById('trigger-char') as HTMLInputElement;
+    if (triggerCharInput) {
+      triggerCharInput.addEventListener('change', async (event) => {
+        const value = (event.target as HTMLInputElement).value;
+        if (value) {
+          const settings = await loadSettings();
+          settings.trigger.character = value;
+          await saveSettings({ trigger: settings.trigger });
+          this.showMessage(`トリガー文字を「${value}」に変更しました`);
+        }
+      });
+    }
+
+    // トリガー文字の処理方法
+    const triggerModeRadios = document.querySelectorAll('input[name="trigger-mode"]');
+    triggerModeRadios.forEach(radio => {
+      radio.addEventListener('change', async (event) => {
+        const value = (event.target as HTMLInputElement).value as 'keep' | 'delete' | 'replace';
+        const settings = await loadSettings();
+        settings.trigger.mode = value;
+        await saveSettings({ trigger: settings.trigger });
+        this.showMessage(`トリガー文字の処理方法を変更しました`);
+      });
+    });
+
+    // ショートカット
+    const shortcutEnabledCheckbox = document.getElementById('shortcut-enabled') as HTMLInputElement;
+    if (shortcutEnabledCheckbox) {
+      shortcutEnabledCheckbox.addEventListener('change', async (event) => {
+        const checked = (event.target as HTMLInputElement).checked;
+        const settings = await loadSettings();
+        settings.shortcut.enabled = checked;
+        await saveSettings({ shortcut: settings.shortcut });
+        this.showMessage(`ショートカットを${checked ? '有効' : '無効'}にしました`);
+      });
+    }
+
+    // 挿入モード
+    const insertModeSelect = document.getElementById('insert-mode') as HTMLSelectElement;
+    if (insertModeSelect) {
+      insertModeSelect.addEventListener('change', async (event) => {
+        const value = (event.target as HTMLSelectElement).value as 'insert' | 'replace' | 'append';
+        await saveSettings({ insertMode: value });
+
+        const modeNames: { [key: string]: string } = {
+          insert: 'カーソル位置に挿入',
+          replace: '選択範囲を置換',
+          append: '末尾に追加',
+        };
+        this.showMessage(`挿入モードを「${modeNames[value]}」に変更しました`);
+      });
+    }
   }
 
   private initializeUI(): void {

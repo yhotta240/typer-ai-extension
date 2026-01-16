@@ -1,10 +1,64 @@
-import "./utils/permissions";
+import { GeminiResponse } from "./utils/gemini";
+import { GeminiRequest, generateText } from "./utils/gemini";
+import { loadSettings } from "./utils/storage";
+
+console.log("[TyperAI Background] Backgroundが起動しました");
+/**
+ * メッセージハンドラー
+ * Content Script からの Gemini API リクエストを処理する
+ */
+chrome.runtime.onMessage.addListener(
+  (
+    message: { action: string; prompt?: string },
+    sender: chrome.runtime.MessageSender,
+    sendResponse: (response: GeminiResponse) => void
+  ) => {
+    if (message.action === 'generateText') {
+      handleGenerateText(message.prompt || '')
+        .then(sendResponse)
+        .catch((error) => {
+          console.error('[TyperAI Background] エラー:', error);
+          sendResponse({
+            success: false,
+            error: '予期しないエラーが発生しました．',
+          });
+        });
+      return true; // 非同期レスポンスを示す
+    }
+    return false;
+  }
+);
 
 /**
- * Background Script を初期化（本番／汎用の初期化処理のみ）
+ * Gemini API にテキスト生成をリクエストする
  */
-function initialize(): void {
-  // 本番用の初期化処理をここに記述する．開発専用のリロード処理等は含めない．
-}
+async function handleGenerateText(prompt: string): Promise<GeminiResponse> {
+  try {
+    const settings = await loadSettings();
 
-initialize();
+    if (!settings.apiKey) {
+      return {
+        success: false,
+        error: 'APIキーが設定されていません．設定画面からAPIキーを入力してください．',
+      };
+    }
+
+    const request: GeminiRequest = {
+      prompt,
+      apiKey: settings.apiKey,
+    };
+
+    console.log('[TyperAI Background] Gemini API リクエスト送信');
+    const response = await generateText(request);
+
+    console.log('[TyperAI Background] Gemini API レスポンス:', response.success ? '成功' : '失敗');
+
+    return response;
+  } catch (error) {
+    console.error('[TyperAI Background] handleGenerateText エラー:', error);
+    return {
+      success: false,
+      error: '予期しないエラーが発生しました．',
+    };
+  }
+}

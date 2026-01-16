@@ -1,5 +1,6 @@
 const path = require("path");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const ExtensionReloader = require("./scripts/ext-reloader");
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -10,7 +11,8 @@ module.exports = {
   entry: {
     background: isDev ? "./src/background.dev.ts" : "./src/background.ts",
     content: "./src/content.ts",
-    popup: "./src/popup.ts"
+    popup: "./src/popup.ts",
+    "content/miniui-ui": "./src/content/miniui-ui.css"
   },
   output: {
     path: path.resolve(__dirname, "dist"),
@@ -24,7 +26,7 @@ module.exports = {
     rules: [
       {
         test: /\.css$/,
-        use: ["style-loader", "css-loader"]
+        use: [MiniCssExtractPlugin.loader, "css-loader"]
       },
       {
         test: /\.tsx?$/,
@@ -35,6 +37,9 @@ module.exports = {
   },
   plugins: (() => {
     const plugins = [
+      new MiniCssExtractPlugin({
+        filename: "[name].css"
+      }),
       new CopyWebpackPlugin({
         patterns: [
           // public の静的ファイルをコピー（manifest.dev.json / manifest.prod.json は除外）

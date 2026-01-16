@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Chrome Extension Starter Kit",
-  "short_name": "Chrome Extension Starter Kit",
-  "version": "0.1.0",
-  "description": "",
+  "name": "Typer AI : テキスト入力 AI アシスタント",
+  "short_name": "Typer AI",
+  "version": "0.0.1",
+  "description": "テキスト入力を支援する AI アシスタントツール",
   "icons": {
     "48": "icons/icon.png"
   },
@@ -18,6 +18,7 @@
   "content_scripts": [
     {
       "matches": ["https://*/*", "http://*/*"],
+      "css": ["content/miniui-ui.css"],
       "js": ["content.js"]
     }
   ]
