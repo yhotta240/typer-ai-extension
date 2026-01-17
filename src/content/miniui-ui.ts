@@ -6,6 +6,7 @@
 export interface MiniUIOptions {
   onSubmit: (prompt: string) => void;
   onCancel: () => void;
+  initialPrompt?: string;
 }
 
 export class MiniUI {
@@ -28,15 +29,6 @@ export class MiniUI {
       this.remove();
     }
 
-    this.createDOM(top, left);
-    this.setupEventListeners();
-    this.promptInput?.focus();
-  }
-
-  /**
-   * DOMを作成
-   */
-  private createDOM(top: number, left: number): void {
     // コンテナを作成
     this.container = document.createElement('div');
     this.container.id = 'typer-ai-miniui-container';
@@ -53,6 +45,9 @@ export class MiniUI {
     this.submitButton = this.container.querySelector('#typer-submit-btn') as HTMLButtonElement;
     const closeButton = this.container.querySelector('#typer-close-btn') as HTMLButtonElement;
     this.errorMessage = this.container.querySelector('#typer-error-msg') as HTMLDivElement;
+
+    // イベントリスナーを設定
+    this.setupEventListeners();
 
     // ボタンのホバー効果
     this.submitButton?.addEventListener('mouseenter', () => {
@@ -79,6 +74,15 @@ export class MiniUI {
     });
 
     closeButton?.addEventListener('click', () => this.options.onCancel());
+
+    // 初期プロンプトを設定
+    if (this.options.initialPrompt && this.promptInput) {
+      this.promptInput.value = this.options.initialPrompt;
+      // 選択テキストがある場合はフォーカスしない（元の選択を維持）
+    } else {
+      // 選択テキストがない場合のみフォーカス
+      this.promptInput?.focus();
+    }
   }
 
   /**
