@@ -127,7 +127,7 @@ class TyperAI {
       return true;
     }
     // element内にinput or textarea or contenteditableがある場合があるから念のためチェック
-    const inputs = element.querySelectorAll('input[type="text"], textarea , [contenteditable="true"]');
+    const inputs = element.querySelectorAll('input:not([type="password"]):not([type="hidden"]), textarea, [contenteditable="true"]');
     if (inputs.length > 0) {
       return true;
     }
@@ -153,7 +153,7 @@ class TyperAI {
       this.cursorPosition = getCursorPositionFromContentEditable(element);
     } else {
       // element内にinput or textarea or contenteditableがある場合の対応
-      const inputElement = element.querySelector('input[type="text"], textarea, [contenteditable="true"]') as
+      const inputElement = element.querySelector('input:not([type="password"]):not([type="hidden"]), textarea, [contenteditable="true"]') as
         | HTMLInputElement
         | HTMLTextAreaElement
         | HTMLElement
