@@ -137,6 +137,16 @@ export class MiniUI {
   }
 
   /**
+   * プロンプトを更新
+   */
+  updatePrompt(text: string): void {
+    if (this.promptInput) {
+      this.promptInput.value = text;
+      this.hideError();
+    }
+  }
+
+  /**
    * 送信処理
    */
   private handleSubmit(): void {

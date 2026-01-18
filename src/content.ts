@@ -90,13 +90,19 @@ class TyperAI {
    * 選択テキストハンドラー
    */
   private handleSelection(): void {
-    if (!this.settings || !this.settings.selection.enabled || this.miniUI) return;
+    if (!this.settings || !this.settings.selection.enabled) return;
 
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0) return;
 
     const selectedText = selection.toString().trim();
     if (selectedText.length === 0 || selectedText.length > this.settings.selection.maxLength) return;
+
+    // ミニUIが既に開いている場合は，プロンプトを更新
+    if (this.miniUI) {
+      this.miniUI.updatePrompt(selectedText);
+      return;
+    }
 
     const range = selection.getRangeAt(0);
     const parentElement = range.startContainer.parentElement as HTMLElement;
