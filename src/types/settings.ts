@@ -23,6 +23,16 @@ export interface ShortcutSettings {
 }
 
 /**
+ * 選択テキスト設定
+ */
+export interface SelectionSettings {
+  /** 有効/無効 */
+  enabled: boolean;
+  /** 最大文字数 */
+  maxLength: number;
+}
+
+/**
  * 挿入モード
  */
 export type InsertMode = 'insert' | 'replace' | 'append';
@@ -39,6 +49,8 @@ export interface AppSettings {
   trigger: TriggerSettings;
   /** ショートカット設定 */
   shortcut: ShortcutSettings;
+  /** 選択テキスト設定 */
+  selection: SelectionSettings;
   /** 挿入モード */
   insertMode: InsertMode;
 }
@@ -51,11 +63,15 @@ export const DEFAULT_SETTINGS: AppSettings = {
   apiKey: '',
   trigger: {
     character: '!',
-    mode: 'delete',
+    mode: 'keep',
   },
   shortcut: {
     enabled: true,
     key: 'Ctrl+Space',
+  },
+  selection: {
+    enabled: true,
+    maxLength: 500,
   },
   insertMode: 'insert',
 };

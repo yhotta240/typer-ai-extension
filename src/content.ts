@@ -49,20 +49,19 @@ class TyperAI {
 
     // ショートカットキーを監視
     document.addEventListener('keydown', (e) => this.handleKeyDown(e), true);
+
+    // 選択テキストを監視
+    document.addEventListener('mouseup', () => this.handleSelection(), true);
   }
 
   /**
    * キー入力ハンドラー（トリガー文字検知）
    */
   private handleKeyUp(event: KeyboardEvent): void {
-    if (!this.settings || this.miniUI) {
-      return;
-    }
+    if (!this.settings || this.miniUI) return;
 
     const target = event.target as HTMLElement;
-    if (!this.isValidInputElement(target)) {
-      return;
-    }
+    if (!this.isValidInputElement(target)) return;
 
     // トリガー文字が入力されたかチェック
     const triggerChar = this.settings.trigger.character;
@@ -75,19 +74,40 @@ class TyperAI {
    * キーダウンハンドラー（ショートカット検知）
    */
   private handleKeyDown(event: KeyboardEvent): void {
-    if (!this.settings || !this.settings.shortcut.enabled || this.miniUI) {
-      return;
-    }
+    if (!this.settings || !this.settings.shortcut.enabled || this.miniUI) return;
 
     const target = event.target as HTMLElement;
-    if (!this.isValidInputElement(target)) {
-      return;
-    }
+    if (!this.isValidInputElement(target)) return;
 
     // ショートカットキーのチェック（Ctrl+Space）
     if (event.ctrlKey && event.code === 'Space') {
       event.preventDefault();
       this.showMiniUI(target);
+    }
+  }
+
+  /**
+   * 選択テキストハンドラー
+   */
+  private handleSelection(): void {
+    if (!this.settings || !this.settings.selection.enabled) return;
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const selectedText = selection.toString().trim();
+    if (selectedText.length === 0 || selectedText.length > this.settings.selection.maxLength) return;
+
+    // ミニUIが既に開いている場合は，プロンプトを更新
+    if (this.miniUI) {
+      this.miniUI.updatePrompt(selectedText);
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    const parentElement = range.startContainer.parentElement as HTMLElement;
+    if (parentElement && this.isValidInputElement(parentElement)) {
+      this.showMiniUI(parentElement);
     }
   }
 
@@ -106,6 +126,13 @@ class TyperAI {
     if (element.isContentEditable) {
       return true;
     }
+    // element内にinput or textarea or contenteditableがある場合があるから念のためチェック
+    const inputs = element.querySelectorAll('input[type="text"], textarea , [contenteditable="true"]');
+    if (inputs.length > 0) {
+      return true;
+    }
+    console.log('[TyperAI Content] 無効な入力要素です:', element);
+
     return false;
   }
 
@@ -124,6 +151,23 @@ class TyperAI {
       this.cursorPosition = getCursorPositionFromInput(element);
     } else if (element.isContentEditable) {
       this.cursorPosition = getCursorPositionFromContentEditable(element);
+    } else {
+      // element内にinput or textarea or contenteditableがある場合の対応
+      const inputElement = element.querySelector('input[type="text"], textarea, [contenteditable="true"]') as
+        | HTMLInputElement
+        | HTMLTextAreaElement
+        | HTMLElement
+        | null;
+      if (inputElement instanceof HTMLInputElement || inputElement instanceof HTMLTextAreaElement) {
+        this.targetElement = inputElement;
+        this.cursorPosition = getCursorPositionFromInput(inputElement);
+      } else if (inputElement && inputElement.isContentEditable) {
+        this.targetElement = inputElement;
+        this.cursorPosition = getCursorPositionFromContentEditable(inputElement);
+      } else {
+        // カーソル位置を取得できなかった場合は明示的にnullを設定する
+        this.cursorPosition = null;
+      }
     }
 
     if (!this.cursorPosition) {
@@ -131,26 +175,47 @@ class TyperAI {
       return;
     }
 
+    // 選択テキストを取得
+    const selectedText = this.getSelectedText();
+
     // トリガー文字を削除（設定による）
     if (this.settings.trigger.mode === 'delete') {
       deleteTriggerCharacter(element, this.settings.trigger.character);
     }
 
     // ミニUIを作成して表示
-    this.createMiniUI();
+    this.createMiniUI(selectedText);
+  }
+
+  /**
+   * 選択テキストを取得
+   */
+  private getSelectedText(): string {
+    if (!this.settings?.selection.enabled) return '';
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return '';
+
+    const selectedText = selection.toString();
+
+    // 最大文字数を超える場合はカット
+    if (selectedText.length > this.settings.selection.maxLength) {
+      return selectedText.substring(0, this.settings.selection.maxLength);
+    }
+
+    return selectedText;
   }
 
   /**
    * ミニUIを作成
    */
-  private createMiniUI(): void {
-    if (!this.cursorPosition) {
-      return;
-    }
+  private createMiniUI(selectedText: string): void {
+    if (!this.cursorPosition) return;
 
     this.miniUI = new MiniUI({
       onSubmit: (prompt) => this.handleSubmit(prompt),
       onCancel: () => this.closeMiniUI(),
+      initialPrompt: selectedText,
     });
 
     // カーソルの下の位置にミニUIを表示
@@ -161,9 +226,7 @@ class TyperAI {
    * プロンプト送信処理
    */
   private async handleSubmit(prompt: string): Promise<void> {
-    if (!this.targetElement || !this.cursorPosition || !this.settings || !this.miniUI) {
-      return;
-    }
+    if (!this.targetElement || !this.cursorPosition || !this.settings || !this.miniUI) return;
 
     try {
       this.miniUI.setLoading(true);
@@ -194,9 +257,7 @@ class TyperAI {
    * 生成されたテキストを挿入
    */
   private insertGeneratedText(text: string): void {
-    if (!this.targetElement || !this.cursorPosition || !this.settings) {
-      return;
-    }
+    if (!this.targetElement || !this.cursorPosition || !this.settings) return;
 
     const mode = this.settings.insertMode;
 
